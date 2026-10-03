@@ -1,0 +1,243 @@
+# 移動プロファイル。探索の重み（その道を通るときに時間が何倍に感じるか。1.0 が素の所要時間）を決める。
+#
+# modes: 移動手段。経路探索はこちらを使う。
+#   reach: true を付けたものは**到達圏として地図に同時に描く**（徒歩・自転車・徒歩＋公共交通）。
+#   graph_mode: 歩行グラフをどの手段で通るか（walk / bike）。省略すると walk。
+#   hokonavi: **ほこナビの段差・幅員・勾配・屋根の倍率**（2026-09-28 追加）。
+#     歩行空間ネットワークデータを持つ舞台（いまは港区）でだけ効く。
+#     段差の段は仕様のコードに合わせてある（2〜5cm／5〜10cm／10cm超）。
+#     **通行不可にはしない**（当てはめが 25m なのでずれることがある）。重くして避けさせる。
+# bands: 月齢で選ぶ年齢帯。スポットの年齢絞り込みなど、年齢が分かっているときに使う。
+modes:
+  - id: walk
+    label: 徒歩
+    reach: true
+    tier: normal
+    walk_speed: 80            # m/分
+    max_walk_seconds: 3600
+    steps: 1.2                # 階段も通れる
+    elevator: 1.0
+    incline: 1.2
+    unpaved: 1.1
+    busy_road: 1.4
+    covered: 1.0
+    cycleway: 0.7
+    bike_sidewalk: 0.8
+    break_minutes: 90
+    stroller: false
+    hokonavi:
+      step_over_2cm: 1.2
+      step_over_5cm: 1.8
+      step_over_10cm: 3.0
+      narrow: 1.3
+      slope: 1.2
+      steep: 1.8
+      roof: 0.95
+
+  # 自転車。歩行グラフを bike で通る（自転車道を優先し、歩道は押して歩く前提で重くする）。
+  # 子どもを乗せるので、車通りの多い道と未舗装をふつうより強く避ける。
+  - id: bike
+    label: 自転車
+    reach: true
+    graph_mode: bike
+    tier: normal
+    walk_speed: 80            # 押して歩く区間の速さ
+    max_walk_seconds: 3600
+    steps: 1.2
+    elevator: 1.0
+    incline: 1.3
+    unpaved: 1.4
+    busy_road: 1.6
+    covered: 1.0
+    cycleway: 0.7
+    bike_sidewalk: 0.9
+    break_minutes: 90
+    stroller: false
+    hokonavi:
+      step_over_2cm: 1.2
+      step_over_5cm: 1.8
+      step_over_10cm: 3.0
+      narrow: 1.3
+      slope: 1.2
+      steep: 1.8
+      roof: 0.95
+
+  - id: stroller
+    label: ベビーカー
+    tier: stroller
+    walk_speed: 70
+    max_walk_seconds: 3600
+    steps: null               # null = 通れない
+    elevator: 0.7
+    incline: 2.0
+    narrow: 1.8
+    unpaved: 1.5
+    busy_road: 1.4
+    covered: 0.85
+    cycleway: 1.0
+    bike_sidewalk: 1.0
+    break_minutes: 60
+    stroller: true
+    hokonavi:                 # **経路で「ベビーカーで行く」を選んだときの重み。**
+      step_over_2cm: 1.8      # 0〜1 歳の年齢帯（baby）と同じ強さにしてある
+      step_over_5cm: 4.0
+      step_over_10cm: 8.0
+      narrow: 2.2
+      slope: 1.6
+      steep: 2.8
+      roof: 0.88
+
+  - id: transit
+    label: 徒歩＋公共交通
+    reach: true
+    tier: normal
+    transit: true             # 徒歩の脚＋時刻表で到達圏を作る
+    walk_speed: 80
+    max_walk_seconds: 1200    # 1 回の徒歩はここまで（乗り継ぎの脚）
+    steps: 1.2
+    elevator: 1.0
+    incline: 1.2
+    unpaved: 1.1
+    busy_road: 1.4
+    covered: 1.0
+    cycleway: 0.7
+    bike_sidewalk: 0.8
+    break_minutes: 90
+    stroller: false
+    hokonavi:
+      step_over_2cm: 1.2
+      step_over_5cm: 1.8
+      step_over_10cm: 3.0
+      narrow: 1.3
+      slope: 1.2
+      steep: 1.8
+      roof: 0.95
+
+bands:
+  - id: prenatal
+    label: 産前
+    months: [-10, -1]
+    tier: gentle              # 乗換表のキャッシュを共有する階級
+    walk_speed: 65            # m/分
+    max_walk_seconds: 720
+    steps: 3.0                # 階段はつらいが通れる
+    steps_no_handrail: 4.5
+    elevator: 0.8
+    incline: 2.0
+    unpaved: 1.4
+    busy_road: 1.3
+    covered: 0.9
+    cycleway: 1.0
+    bike_sidewalk: 1.0
+    break_minutes: 30         # これを超えて歩き続けないよう休憩を促す
+    stroller: false
+    hokonavi:                 # ほこナビの段差・幅員・勾配・屋根（港区のみ入る）
+      step_over_2cm: 1.4
+      step_over_5cm: 2.5
+      step_over_10cm: 4.0
+      narrow: 1.6
+      slope: 1.8
+      steep: 3.0
+      roof: 0.9
+
+  - id: baby
+    label: 0〜1歳（ベビーカー）
+    months: [0, 23]
+    tier: stroller
+    walk_speed: 70
+    max_walk_seconds: 900
+    steps: null               # null = 通れない
+    elevator: 0.7
+    incline: 2.2
+    narrow: 2.0
+    unpaved: 1.6
+    busy_road: 1.4
+    covered: 0.85
+    cycleway: 1.0
+    bike_sidewalk: 1.0
+    break_minutes: 45
+    stroller: true
+    hokonavi:                 # ベビーカーは段差と狭さがいちばんこたえる
+      step_over_2cm: 1.8
+      step_over_5cm: 4.0
+      step_over_10cm: 8.0
+      narrow: 2.2
+      slope: 1.6
+      steep: 2.8
+      roof: 0.88
+
+  - id: toddler
+    label: 1〜3歳（ベビーカー＋歩く）
+    months: [24, 47]
+    tier: stroller
+    walk_speed: 70
+    max_walk_seconds: 900
+    steps: null
+    elevator: 0.7
+    incline: 2.0
+    narrow: 1.8
+    unpaved: 1.5
+    busy_road: 1.4
+    covered: 0.85
+    cycleway: 1.0
+    bike_sidewalk: 1.0
+    break_minutes: 60
+    stroller: true
+    hokonavi:
+      step_over_2cm: 1.7
+      step_over_5cm: 3.5
+      step_over_10cm: 7.0
+      narrow: 2.0
+      slope: 1.5
+      steep: 2.6
+      roof: 0.88
+
+  - id: preschool
+    label: 3〜6歳（自分で歩く）
+    months: [48, 83]
+    tier: gentle
+    walk_speed: 65
+    max_walk_seconds: 900
+    steps: 1.6
+    elevator: 0.9
+    incline: 1.4
+    unpaved: 1.2
+    busy_road: 1.8            # 車通りの多い道を強く避ける
+    covered: 0.95
+    cycleway: 0.8
+    bike_sidewalk: 0.85
+    break_minutes: 60
+    stroller: false
+    hokonavi:
+      step_over_2cm: 1.2
+      step_over_5cm: 1.8
+      step_over_10cm: 3.0
+      narrow: 1.3
+      slope: 1.2
+      steep: 1.8
+      roof: 0.95
+
+  - id: school
+    label: 6〜12歳
+    months: [84, 156]
+    tier: normal
+    walk_speed: 80
+    max_walk_seconds: 1200
+    steps: 1.2
+    elevator: 1.0
+    incline: 1.2
+    unpaved: 1.1
+    busy_road: 1.6
+    covered: 1.0
+    cycleway: 0.7             # 自転車は自転車道を優先
+    bike_sidewalk: 0.8        # 「普通自転車歩道通行可」に相当する歩道
+    break_minutes: 90
+    stroller: false
+    hokonavi:
+      step_over_2cm: 1.2
+      step_over_5cm: 1.8
+      step_over_10cm: 3.0
+      narrow: 1.3
+      slope: 1.2
+      steep: 1.8
+      roof: 0.95

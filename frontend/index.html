@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>子育てナビ</title>
+<link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
+<!-- **丸ゴシック**（2026-09-30）。子育て系サイトでいちばん多い字づかい。
+     届かなくても端末の丸ゴシック → 素のゴシックに落ちるので、画面は壊れない -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="head">
+  <!-- サービス名は**トップへのリンク**（ふつうの web サービスと同じ挙動）。
+       `./` にしてあるので、開発サーバでも GitHub Pages のサブパスでも同じように効く。
+       問い合わせが `?stage=` 付きでも、押せば既定の舞台に戻る -->
+  <h1><a href="./">子育てナビ</a></h1>
+  <div class="stage-switch" id="stageSwitch"></div>
+  <button class="link" id="aboutBtn">このサービスについて</button>
+</header>
+
+<div class="app" id="app">
+  <aside class="pane">
+    <section class="box">
+      <h2>自宅</h2>
+      <select id="homeSelect" class="field"></select>
+    </section>
+
+    <section class="box">
+      <h2>さがす範囲</h2>
+      <!-- 行き先は**自宅からの直線距離**で絞る（2026-09-27・ユーザー指示）。
+           移動手段は使わない。手段の話は、行き先を決めたあとの経路のペインに寄せている。
+           min/max/step は app.js の RADIUS_* と build_static.py の RADII にそろえること -->
+      <label class="label" for="radius">自宅からの半径
+        <span class="age-label" id="radiusLabel">1.0km</span></label>
+      <input type="range" id="radius" min="200" max="6000" step="200" value="1000">
+      <!-- さがしているあいだのぐるぐるだけ。**説明は出さない**
+           （件数と内訳は地図の凡例にある。2026-09-30・ユーザー指示） -->
+      <p class="hint" id="reachHint"></p>
+    </section>
+
+    <!-- **経路探索が使っている公共交通**を地図に重ねる（2026-09-30・ユーザー指示）。
+         行き先さがしの下敷きなので、さがす範囲のすぐ下に置く -->
+    <section class="box" id="transitBox" hidden>
+      <h2>地図に出す公共交通</h2>
+      <p class="hint">経路探索が使っている路線と乗り場です</p>
+      <div id="transitChecks"></div>
+      <p class="hint" id="transitNote"></p>
+    </section>
+
+    <section class="box">
+      <h2>出発</h2>
+      <!-- 出発時刻は**先に計算してある組み合わせ**から選ぶ（いまは 1 つ）。
+           増やしたいときは data/snapshots.yaml に足して作り直す -->
+      <label class="label" for="snapshot">いつ出かけるか</label>
+      <select id="snapshot" class="field"></select>
+      <p class="hint" id="snapshotNote"></p>
+      <!-- 既定でオン。実際の初期値は app.js の state.stroller から書き戻す -->
+      <label class="check"><input type="checkbox" id="stroller" checked>
+        ベビーカーで行く（階段を通らない道でさがす）</label>
+      <p class="dest" id="destText">目的地: 未設定</p>
+      <button class="primary" id="searchBtn" disabled>経路をさがす</button>
+    </section>
+
+    <section class="box" id="pickBox" hidden>
+      <h2>近くの行き先</h2>
+      <div id="picks"></div>
+    </section>
+
+    <section class="box" id="eventBox" hidden>
+      <h2>これからのイベント</h2>
+      <div id="events"></div>
+    </section>
+
+  </aside>
+
+  <!-- 経路の結果は左ペインの右隣に出す（左ペインを下までスクロールしないと
+       見えなかったため）。結果が出るまでは畳んでおく -->
+  <section class="pane pane-route" id="routePane" hidden>
+    <section class="box">
+      <h2>経路 <button class="link close" id="routeClose">閉じる</button></h2>
+      <div id="results"></div>
+    </section>
+  </section>
+
+  <main class="map-wrap"><div id="map"></div>
+    <!-- 経路の線の見分け。**2 本並べるときだけ出す**（1 本のときは説明が要らない） -->
+    <div class="legend legend-route" id="routeLegend" hidden></div>
+    <div class="legend" id="legend"></div>
+  </main>
+
+  <!-- 使えるデータは画面の右端に置く（この作品の主張なので、常に見えるところに） -->
+  <aside class="pane pane-data" id="dataPane">
+    <section class="box">
+      <h2>この舞台で使えるデータ</h2>
+      <div id="coverage" class="coverage"></div>
+    </section>
+  </aside>
+</div>
+
+<div class="about" id="about" hidden></div>
+
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

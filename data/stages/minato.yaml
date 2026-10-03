@@ -1,0 +1,170 @@
+# 東京都港区。**2 つめの舞台**（2026-09-27 追加）。
+#
+# 流山市に無かった層がここで初めて効く。
+#   - **駅の外**: ほこナビの屋外歩行空間ネットワーク（大門駅周辺・お台場海浜公園周辺）
+#   - **駅の中**: 都営地下鉄の GTFS-Pathways（大江戸線 12 駅のうち**港区は 5 駅**）
+# **大門駅は出入口 13 か所すべてが屋外ネットワークと 50m 以内**でつながる（実測）ので、
+# 「ホーム → 改札 → 出入口 → 歩道 → 目的地」を 1 本の段差なし経路にできる。
+id: minato
+name: 港区
+pref: 東京都
+pref_code: "13"
+code: "13103"
+center: {lat: 35.6581, lon: 139.7414}
+home_radius_km: 10
+jma_area: "130000"
+
+# 自宅の候補。**駅からほどよく離れた住宅地**に置く（ユーザー指示 2026-09-27）。
+# 流山市は駅の西側すぐに置いてしまい、歩き始めがいつも駅前だった。
+# 最寄り駅までの距離は scripts/pick_home.py で実測して選んでいる。
+# 区内を約 100m 格子（2,091 点）で測ったところ、**最寄り駅までの距離は中央値 342m・最大 1,178m**。
+# 「港区ならどこでも駅に近い」はおおむね当たっていて、**700m 以上離れているのは区の 7% だけ**。
+# そのなかから住宅地を選んだ。
+#   芝浦四丁目 863m（芝浦アイランド。運河に囲まれたタワーマンションの島で、
+#                  港区でいちばん子どもが増えている地区のひとつ。芝浦小学校がある）
+# 次の候補（足すときはここに書くだけ。画面は触らない）
+#   白金六丁目   35.6443 / 139.7215（827m・最寄り白金台。昔からの住宅地）
+#   南麻布三丁目 35.6497 / 139.7314（791m・最寄り白金高輪）
+#   港南四丁目   35.6299 / 139.7490（813m・最寄り天王洲アイル）
+homes:
+  - id: shibaura
+    name: 芝浦四丁目（芝浦アイランド）
+    lat: 35.6371
+    lon: 139.7501
+    note: 運河に囲まれた住宅の島。いちばん近い駅（ゆりかもめ芝浦ふ頭）まで約 860m、田町駅まで約 1km
+pbf: kanto
+
+transit:
+  - id: toei_train
+    kind: gtfs
+    src: odpt_public
+    path: Toei/data/Toei-Train-GTFS.zip
+    organization: 東京都交通局
+    feed_name: 都営地下鉄
+    license: CC BY 4.0
+    license_url: https://creativecommons.org/licenses/by/4.0/deed.ja
+  # **駅の中。** 大江戸線 12 駅ぶん（うち港区は大門・赤羽橋・麻布十番・六本木・青山一丁目の 5 駅）。
+  # データセットの説明に「コンテスト期間限定公開」とある。
+  - id: toei_pathways
+    kind: pathways
+    src: odpt_public
+    path: Toei/data/Toei-Train-GTFS-Pathway.zip
+    organization: 東京都交通局
+    feed_name: 都営地下鉄（GTFS-Pathways）
+    license: CC BY 4.0
+    license_url: https://creativecommons.org/licenses/by/4.0/deed.ja
+  - id: toei_bus
+    kind: gtfs
+    src: odpt_public
+    path: Toei/data/ToeiBus-GTFS.zip
+    organization: 東京都交通局
+    feed_name: 都営バス
+    license: CC BY 4.0
+    license_url: https://creativecommons.org/licenses/by/4.0/deed.ja
+  - id: metro
+    kind: gtfs
+    src: odpt_token
+    path: TokyoMetro/data/TokyoMetro-Train-GTFS.zip
+    organization: 東京地下鉄
+    feed_name: 東京メトロ
+    license: ODPT
+    required: false
+  - id: jreast
+    kind: gtfs
+    src: odpt_challenge
+    path: JR-East/data/JR-East-Train-GTFS.zip
+    organization: JR東日本
+    feed_name: JR東日本
+    required: false
+
+walk_layers:
+  - kind: osm
+  # 屋外の段差・幅員・屋根・エレベーター。**区の全域ではない**（大門駅周辺 21.4km と
+  # お台場海浜公園周辺 16.8km だけ）。無い場所は経路に「データがありません」と出る
+  - kind: hokonavi
+    datasets:
+      - nwd_daimon_station
+      - nwd_odaiba-kaihin-koen_station
+
+indoor:
+  kind: gtfs_pathways
+  feed: toei_pathways
+
+# 入会・入園が要る施設（保育園 128・幼稚園 26・学童クラブ・病児保育 7）は
+# 「今日どこかに行きたい」の行き先にならないので取り込まない。
+#
+# **港区の施設情報オープンデータには、施設ごとの公式ページ URL（`ファイルパス`）が
+# 99〜100% 入っている。** 流山市では市のホームページを巡回して自前整備するしかなかった
+# 部分が、ここではオープンデータだけでそろう。
+spots:
+  - kind: minato_facility
+    id: minato_park
+    label: 公園・児童遊園・緑地
+    category: 公園
+    url: https://opendata.city.minato.tokyo.jp/dataset/dc609dcf-892a-4a20-8f74-f62ce9fc806d/resource/f636e5b8-088f-42e2-b95c-d0978d4e339c/download/minatokushisetsujoho_kouen.csv
+    source_url: https://opendata.city.minato.tokyo.jp/dataset/minatokushisetsujoho_kouen
+  # 子どもの施設。**URL のパスで種類が分かる**（/hoikuen/ 保育園・/yochien/ 幼稚園・
+  # /jidokan/ 児童館と子育てひろば・/sho//chu/ 学校・/byouji/ 病児保育）ので、
+  # 予約なしで行ける /jidokan/ だけを採り、そこから学童クラブと児童相談所を落とす
+  - kind: minato_facility
+    id: minato_child
+    label: 子育てひろば・児童館
+    url: https://opendata.city.minato.tokyo.jp/dataset/e41efae9-b652-405c-8ce1-3bbdd423cf6b/resource/ec1b27b3-775a-4419-99c1-0f525d9043fe/download/minatokushisetsujoho_gakkou.csv
+    source_url: https://opendata.city.minato.tokyo.jp/dataset/minatokushisetsujoho_gakkou
+    include_path: ["/jidokan/"]
+    exclude_name: ["学童クラブ", "児童相談所"]
+  - kind: minato_facility
+    id: minato_library
+    label: 図書館・生涯学習施設
+    url: https://opendata.city.minato.tokyo.jp/dataset/52105970-c407-423c-8827-2cfc229bf864/resource/dc824430-1645-45f6-8dc1-229b2d2c97a2/download/minatokushisetsujoho_tosyokan.csv
+    source_url: https://opendata.city.minato.tokyo.jp/dataset/minatokushisetsujoho_tosyokan
+    sub: ["図書館・生涯学習施設", "郷土歴史館・みなと科学館・伝統文化交流館"]
+  - kind: minato_facility
+    id: minato_kumin
+    label: 区民センター・区民協働施設
+    url: https://opendata.city.minato.tokyo.jp/dataset/3502c088-e6a2-4eee-9a3a-b4ea40459d4e/resource/41a97db9-f48a-40f1-b1f1-0dbd203e5ac1/download/minatokushisetsujoho_kumincenter.csv
+    source_url: https://opendata.city.minato.tokyo.jp/dataset/minatokushisetsujoho_kumincenter
+  # ほこナビのバリアフリー施設等データ（東京都）。**おむつ交換台があるものだけ**採る
+  - kind: hokonavi_toilet
+    id: tokyo_bf_toilet
+    label: おむつ替えのできるトイレ
+    lg_code: "131032"
+    url: https://ckan.hokonavi.go.jp/dataset/3c4752a2-e24a-4886-a312-0cd0928e4247/resource/d2a43ef1-5233-4a50-9b47-27de1ecfea32/download/facility_tokyo_barrier-free_toilet.zip
+    source_url: https://ckan.hokonavi.go.jp/dataset/facility_tokyo_bf-toilet
+
+# **行き先として出さない種類**（2026-09-30・ユーザー指示）。
+# データは取り込んだまま（`spots` / `outside` の定義も下の `tokyo_bf_toilet` も残す）で、
+# 画面に出すのをやめるだけ。ここを消せばそのまま戻る。
+# おむつ替えのできるトイレは**「今日どこかに行きたい」の行き先ではない**（着いた先で使うもの）。
+# 半径 6km の円で 433 件が出ていて、区の行き先 108 件を数で埋めていた。
+# **見出しが「おむつ替えのできるトイレ」のものだけ**が消える。同じデータから来ていても、
+# 公園として統合された 40 件と児童館 3 件は公園・児童館のまま残る。
+hide_types:
+  - おむつ替えのできるトイレ
+
+# --- 舞台の外の行き先 ---
+#
+# 半径 6km の円は区境で止まらない。自宅（芝浦四丁目）から区境までの最短距離は
+# 品川区 1,235m／中央区 2,211m／江東区 2,411m／渋谷区 2,613m／目黒区 2,968m／
+# 千代田区 3,583m／大田区 4,857m／新宿区 5,003m／世田谷区 5,761m（国土数値情報 N03 で実測）。
+#
+# **東京都のバリアフリー施設等データ（ほこナビ）は都内 63 区市町村ぶんが 1 つに入っている**ので、
+# `lg_codes` を並べるだけで隣の区まで届く。**1 件ずつ当たり直す必要がない**
+# （流山市では隣の市の公式ページを 62 件ぶん手で当たった）。
+# **大田区はこのデータの提供自治体に入っていない**（0 件）ので、並べても何も出ない。
+outside:
+  - kind: hokonavi_toilet
+    id: minato_outside_toilet
+    label: おむつ替えのできるトイレ（隣の区）
+    url: https://ckan.hokonavi.go.jp/dataset/3c4752a2-e24a-4886-a312-0cd0928e4247/resource/d2a43ef1-5233-4a50-9b47-27de1ecfea32/download/facility_tokyo_barrier-free_toilet.zip
+    source_url: https://ckan.hokonavi.go.jp/dataset/facility_tokyo_bf-toilet
+    checked_at: "2026-09-27"
+    lg_codes:
+      "131091": 品川区
+      "131024": 中央区
+      "131083": 江東区
+      "131113": 渋谷区
+      "131105": 目黒区
+      "131016": 千代田区
+      "131041": 新宿区
+      "131121": 世田谷区

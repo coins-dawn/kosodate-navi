@@ -1,0 +1,122 @@
+id: nagareyama
+name: 流山市
+pref: 千葉県
+pref_code: "12"
+code: "12220"
+center: {lat: 35.8562, lon: 139.9029}
+home_radius_km: 10
+# 天気予報（気象庁）の区域コード。千葉県は 120000
+jma_area: "120000"
+
+# 自宅の候補。駅そのものではなく**住宅地の中**に置く
+# （おおたかの森の駅前デッキのように、ベビーカーで出られない場所を避けるため）
+#
+# いまは流山おおたかの森の 1 か所だけ。画面のプルダウンは残してあるので、
+# ここに足せばそのまま選べるようになる（南流山 35.8400/139.9000、
+# 江戸川台 35.8960/139.9130 が次の候補）。
+homes:
+  - id: otakanomori
+    name: 流山おおたかの森（住宅地）
+    lat: 35.8700
+    lon: 139.9220
+    note: つくばエクスプレスと東武アーバンパークラインが交わる駅の西側
+pbf: kanto
+
+transit:
+  - id: mir_train
+    kind: gtfs
+    src: odpt_token
+    path: MIR/data/MIR-Train-GTFS.zip
+    organization: 首都圏新都市鉄道
+    feed_name: つくばエクスプレス
+    license: ODPT
+  - id: greenbus
+    kind: gtfs
+    src: gtfs_data_jp
+    path: nagareyamacity/feeds/nagareyamagreenbus
+    organization: 流山市
+    feed_name: 流山ぐりーんバス
+    license: CC BY 4.0
+    license_url: https://creativecommons.org/licenses/by/4.0/deed.ja
+  - id: tobu
+    kind: gtfs
+    src: odpt_challenge
+    path: Tobu/data/Tobu-Train-GTFS.zip
+    organization: 東武鉄道
+    feed_name: 東武鉄道
+    required: false
+  # 東武バスは GTFS が配信されておらず、JSON API（チャレンジ限定）しかない。
+  # backend/odptbus.py が GTFS に組み直す。停留所の座標は JSON に無いので、
+  # すでに取り込んだ GTFS と OSM（data/busstop/<stage>.json）から名前で補う。
+  # **この舞台の GTFS を先に取り終えてから**組むので、並びの最後に置くこと。
+  - id: tobubus
+    kind: gtfs
+    src: odpt_bus_json
+    operator: odpt.Operator:TobuBus
+    osm_operator: 東武バス
+    url: https://www.tobu-bus.com/
+    organization: 東武バス
+    feed_name: 東武バス
+    required: false
+
+walk_layers:
+  - kind: osm
+
+indoor: null
+
+# 入園・入会の手続きが要る施設（保育所・幼稚園・学童クラブ）は、
+# 「今日どこかに行きたい」の行き先にならないので**取り込まない**
+# （scripts/build_spots.py が dropin=False のものを落とす）。
+# そのため「認可保育施設」の CSV は出典から外している。
+spots:
+  - kind: nagareyama_facility
+    id: nagareyama_childcare
+    label: 子育て施設
+    url: https://www.city.nagareyama.chiba.jp/_res/projects/default_project/_page_/001/015/900/20200729shisetsu_kosodate.csv
+    source_url: https://www.city.nagareyama.chiba.jp/institution/1004043/1015900.html
+  - kind: nagareyama_facility
+    id: nagareyama_park
+    label: 公園
+    category: 公園
+    url: https://www.city.nagareyama.chiba.jp/_res/projects/default_project/_page_/001/047/619/shisetsu_kouenr6.csv
+    source_url: https://www.city.nagareyama.chiba.jp/institution/1004355/1047619/index.html
+  - kind: nagareyama_hotspace
+    id: nagareyama_hotspace
+    label: 赤ちゃんほっとスペース
+    url: https://www.city.nagareyama.chiba.jp/_res/projects/default_project/_page_/001/001/287/hotspace202605.csv
+    source_url: https://www.city.nagareyama.chiba.jp/life/1001107/1001286/1001287.html
+  - kind: nagareyama_toilet
+    id: nagareyama_toilet
+    label: おむつ替えのできるトイレ
+    url: https://www.city.nagareyama.chiba.jp/_res/projects/default_project/_page_/001/033/350/toireitiran/2024kousyuutoireitiran.csv
+    source_url: https://www.city.nagareyama.chiba.jp/institution/1004355/1033350/index.html
+  - kind: municipal_event
+    id: nagareyama_event
+    label: イベント
+    url: https://www.city.nagareyama.chiba.jp/_res/projects/default_project/_page_/001/042/887/opendata_event20240331.csv
+    source_url: https://www.city.nagareyama.chiba.jp/event/1042887.html
+  - kind: local
+    id: nagareyama_local
+    label: 自前整備
+    file: nagareyama_spots.csv
+
+# **行き先として出さない種類**（2026-09-30・ユーザー指示。港区とそろえる）。
+# データは取り込んだまま（上の `nagareyama_toilet` も残す）で、画面に出すのをやめるだけ。
+# おむつ替えのできるトイレは**「今日どこかに行きたい」の行き先ではない**（着いた先で使うもの）。
+# 流山市はこの見出しのものが 1 件しかない（ほかの 10 件は公園と統合されて公園になっている）。
+# **市外の「授乳・おむつ替え」27 件と「赤ちゃんほっとスペース」50 件は残す**
+# （ユーザー判断 2026-09-30）。ほっとスペースは市の登録制度で、それ自体が行き先になる。
+hide_types:
+  - おむつ替えのできるトイレ
+
+# 市ホームページの巡回先。オープンデータに無い「概要・公式ページ・遊具・利用時間」を
+# ここから事実だけ取り出して独自整備する（scripts/fetch_city_pages.py）
+web_pages:
+  root: https://www.city.nagareyama.chiba.jp
+  sections:
+    institution:
+      start: ["/institution/index.html"]
+      prefixes: ["/institution/"]
+    child:
+      start: ["/child/index.html", "/life/1001107/index.html"]
+      prefixes: ["/child/", "/life/1001107/"]

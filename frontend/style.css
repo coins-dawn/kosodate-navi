@@ -1,0 +1,267 @@
+/* **やさしいクリーム**（2026-09-30・ユーザーが 4 案から選んだもの）。
+   実際の子育て系サイトを調べたところ、共通していたのは
+   **生成りの地色・丸ゴシック・大きめの角丸・コーラルの差し色**の 4 つだった
+   （SANKOU! のベビー/キッズ/ママのギャラリー、自治体の母子手帳アプリ）。
+   **画面の作りと操作は変えていない。色・字・角・影だけ**。
+   地図にかぶせる紙の色（app.js の `MAP_STYLE.washColor`）も --bg にそろえること。 */
+:root{
+  --bg:#faf5ec; --panel:#fffdf8; --ink:#43362c; --muted:#8b7b6b; --line:#ece0d0;
+  --accent:#e2714f; --accent-ink:#fffdf8; --warn:#c46a2a; --warn-bg:#fdf0e2;
+  --ok:#5a8f6b; --ok-bg:#eef5ec; --shadow:0 2px 6px rgba(120,90,60,.10);
+}
+/* 暗いほうも**灰色ではなく茶色**に振って、生成りの続きに見せる */
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#211c17; --panel:#2a231d; --ink:#f0e7db; --muted:#a99a88; --line:#3d342b;
+    --accent:#ef8f6d; --accent-ink:#2b1a12; --warn:#e8b075; --warn-bg:#33251a;
+    --ok:#8fc39f; --ok-bg:#222c24; --shadow:0 2px 8px rgba(0,0,0,.45);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#211c17; --panel:#2a231d; --ink:#f0e7db; --muted:#a99a88; --line:#3d342b;
+  --accent:#ef8f6d; --accent-ink:#2b1a12; --warn:#e8b075; --warn-bg:#33251a;
+  --ok:#8fc39f; --ok-bg:#222c24;
+}
+*{box-sizing:border-box}
+/* **丸ゴシック**。子育て系サイトでいちばん多い字づかいで、角が丸いぶんやわらかく見える。
+   届かないときのために、端末の丸ゴシックと素のゴシックを後ろに並べてある */
+body{margin:0;background:var(--bg);color:var(--ink);
+  font-family:"Zen Maru Gothic","Hiragino Maru Gothic ProN",system-ui,-apple-system,
+    "Hiragino Sans","Noto Sans JP",Meiryo,sans-serif;
+  font-size:14px;line-height:1.6}
+.head{display:flex;align-items:center;gap:16px;padding:10px 16px;background:var(--panel);
+  border-bottom:none;box-shadow:0 1px 0 var(--line);position:sticky;top:0;z-index:5}
+.head h1{font-size:17px;margin:0;letter-spacing:.06em;color:var(--accent);font-weight:700}
+.head h1 a{color:inherit;text-decoration:none}
+.head h1 a:hover{opacity:.72}
+.head h1 a:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:6px}
+.stage-switch{display:flex;gap:6px;flex:1}
+.stage-switch button{border:1px solid var(--line);background:transparent;color:var(--ink);
+  padding:5px 12px;border-radius:999px;cursor:pointer;font-size:13px}
+.stage-switch button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);
+  border-color:var(--accent)}
+/* まだ使えない舞台。**枠は残して押せなくする**（後から足す場所が見えるように） */
+.stage-switch button[disabled]{opacity:.4;cursor:not-allowed;border-style:dashed}
+.link{background:none;border:none;color:var(--muted);cursor:pointer;font-size:13px;
+  text-decoration:underline}
+/* 左から［操作］［経路（出たときだけ）］［地図］［使えるデータ］の 4 列。
+   経路を左ペインの中に出していたときは、下までスクロールしないと見えなかった。 */
+.app{display:grid;grid-template-columns:344px 1fr 296px;height:calc(100vh - 49px)}
+.app.has-route{grid-template-columns:344px 336px 1fr 296px}
+/* hidden 属性より .app の display:grid が勝ってしまうので、明示的に消す
+   （「このサービスについて」を開いたときに地図が残ってしまっていた） */
+.app[hidden]{display:none}
+.app.nomap{grid-template-columns:1fr}
+.pane{overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:12px;
+  background:var(--bg);border-right:1px solid var(--line)}
+.pane[hidden]{display:none}
+.pane-data{border-right:none;border-left:1px solid var(--line)}
+.box h2 .close{float:right;font-size:11px;padding:0}
+.box{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:12px;
+  box-shadow:var(--shadow)}
+.box h2{font-size:12px;margin:0 0 8px;color:var(--accent);font-weight:700;letter-spacing:.1em}
+.hint{color:var(--muted);font-size:12px;margin:6px 0 0}
+.label{display:block;font-size:12px;color:var(--muted);margin:8px 0 3px}
+.field{width:100%;padding:7px 10px;border:1px solid var(--line);border-radius:12px;
+  background:var(--panel);color:var(--ink);font-size:13px;font-family:inherit}
+.home{margin:4px 0 0;font-weight:600}
+input[type=range]{width:100%;accent-color:var(--accent)}
+.age-row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:4px}
+.age-label{font-weight:700;font-size:16px}
+.tag{background:var(--ok-bg);color:var(--ok);border-radius:999px;padding:2px 10px;font-size:12px}
+.check{display:flex;align-items:center;gap:6px;margin-top:8px;font-size:13px}
+.chip{display:inline-block;border-radius:3px;border:1px solid rgba(0,0,0,.18);
+  vertical-align:-2px}
+/* 公共交通のチェック。件数はチェックの右に、フィード名はその下にぶら下げる */
+.check .hint{margin:0 0 0 auto}
+.transit-feeds{margin:2px 0 0 22px;font-size:11px}
+.lg-reach{display:flex;flex-direction:column;gap:1px;margin-bottom:4px;
+  padding-bottom:4px;border-bottom:1px solid var(--line)}
+.lg-reach span{display:flex;align-items:center;gap:5px;color:var(--ink);font-size:10.5px}
+/* スポットの印の凡例。地図に出ている種類だけを並べる */
+.lg-spots{display:grid;grid-template-columns:1fr 1fr;gap:0 10px;margin-bottom:4px;
+  padding-bottom:4px;border-bottom:1px solid var(--line)}
+.lg-spots span{display:flex;align-items:center;gap:4px;color:var(--ink);font-size:10.5px;
+  white-space:nowrap}
+.lg-spots svg,.pick svg{flex:none;vertical-align:-3px}
+.lg-reach .chip{flex:none}
+.row{display:flex;gap:8px}
+.row input{flex:1;padding:6px;border:1px solid var(--line);border-radius:12px;
+  background:var(--panel);color:var(--ink)}
+.dest{margin:10px 0 8px;font-size:13px}
+.primary{width:100%;padding:10px;border:none;border-radius:999px;letter-spacing:.06em;
+  box-shadow:0 2px 0 rgba(160,80,50,.22);background:var(--accent);
+  color:var(--accent-ink);font-weight:700;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;gap:7px}
+.primary:disabled{opacity:.45;cursor:default}
+/* 計算中だと分かるようにする。探索は数秒かかるので、待ちのあいだ画面が
+   かたまったように見えていた */
+.spinner{display:inline-block;width:13px;height:13px;border:2px solid currentColor;
+  border-right-color:transparent;border-radius:50%;animation:spin .7s linear infinite;
+  flex:none}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.spinner{animation-duration:2.4s}}
+.loading{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:13px;
+  padding:10px 0}
+.hint .spinner{width:11px;height:11px;margin-right:5px;vertical-align:-1px}
+/* 経路の札。**押すと地図の線がその手段に変わる**ので、押せることと、
+   いま地図に出ているものが分かるようにする */
+.plan{border:1px solid var(--line);border-radius:14px;padding:10px;margin-bottom:8px;
+  cursor:pointer;background:var(--panel)}
+.plan:hover{border-color:var(--accent)}
+.plan.on{border-color:var(--accent);box-shadow:inset 3px 0 0 var(--accent)}
+.plan:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.plan h3{margin:0 0 4px;font-size:13px;display:flex;justify-content:space-between;gap:8px}
+.plan .time{font-variant-numeric:tabular-nums;font-weight:700}
+.leg{display:flex;gap:8px;font-size:12px;padding:3px 0;border-top:1px dashed var(--line)}
+.leg:first-of-type{border-top:none}
+.leg .mode{color:var(--muted);min-width:56px}
+.note{background:var(--ok-bg);color:var(--ok);border-radius:12px;padding:7px 10px;font-size:12px;
+  margin-top:6px}
+.warn{background:var(--warn-bg);color:var(--warn);border-radius:12px;padding:7px 10px;
+  font-size:12px;margin-top:6px}
+/* 当て馬（段差をよけない道）の説明。**地図のグレーの点線と同じ色を左に置いて**、
+   どの線の話かを色で結びつける。注意（warn）と同じ赤にはしない＝これは
+   「悪い知らせ」ではなく「よけた甲斐」の説明なので、目立たせすぎない */
+.cmp{display:flex;align-items:flex-start;gap:6px;flex-wrap:wrap;
+  margin:5px 0 2px;padding:5px 7px;font-size:11.5px;line-height:1.5;
+  color:var(--muted);background:var(--ok-bg);border-radius:12px;
+  border-left:3px dashed #8c887e}
+.cmp b{color:var(--ink)}
+.cmp .txt{flex:1 1 0;min-width:0}
+.cmp .bi{flex:none;margin-top:1px}
+.cmp-hint{flex-basis:100%;font-size:10.5px}
+.cmp-toggle{margin:0 0 8px;color:var(--muted)}
+.pick{padding:7px 0;border-top:1px dashed var(--line);cursor:pointer}
+.pick:first-child{border-top:none}
+.pick:hover{background:var(--ok-bg)}
+.pick .tag{font-size:11px;padding:1px 8px}
+.coverage{font-size:12px;color:var(--muted)}
+.coverage b{color:var(--ink)}
+.coverage div{padding:3px 0;border-top:1px solid var(--line)}
+.coverage div:first-child{border-top:none}
+.map-wrap{position:relative}
+#map{width:100%;height:100%}
+/* 目的地の旗。**行き先の印より前に出す**（旗が印の下に隠れると、どれを選んだか分からない） */
+.dest-pin{line-height:0;cursor:default;filter:drop-shadow(0 2px 3px rgba(60,40,20,.35))}
+/* 吹き出しより後ろに置く（DOM では凡例が後なので、指定しないと上に乗る） */
+.legend{z-index:2;position:absolute;left:10px;bottom:22px;background:var(--panel);border:1px solid var(--line);
+  border-radius:14px;padding:7px 9px;font-size:10.5px;color:var(--muted);box-shadow:var(--shadow);
+  max-width:min(320px, calc(100% - 20px));line-height:1.5}
+/* 経路の線の見分け。**地図と同じ描き方のチップ**を置く（色の名前で説明しない） */
+.legend-route{top:10px;bottom:auto;color:var(--ink);font-size:11px}
+.legend-route div{padding:1px 0;display:flex;align-items:center;gap:6px}
+.legend-route .lg-blocks{gap:10px;color:var(--muted);margin-top:2px}
+.legend-route .bi{vertical-align:-2px}
+.ln{flex:none;display:inline-block;width:26px;height:0;border-top-style:dashed}
+.ln-route{border-top-width:4px;border-top-color:#c2582a}
+.ln-cmp{border-top-width:2.4px;border-top-color:#8c887e}
+.maplibregl-popup{z-index:5}
+.maplibregl-popup-content{font-family:"Zen Maru Gothic","Hiragino Maru Gothic ProN",system-ui,
+    -apple-system,"Hiragino Sans","Noto Sans JP",Meiryo,sans-serif;
+  background:var(--panel);color:var(--ink);border-radius:20px;padding:0;max-width:300px;
+  overflow:hidden;box-shadow:0 6px 18px rgba(120,90,60,.16)}
+/* スポットの吹き出し。**地図の印・左の一覧と同じ色と絵**をつかって、同じものだと分かるようにする。
+   並びは「まず読むもの（名前・概要・注意）→ 事実の表 → 出どころ → できること」に固定。
+   `--tint` はその種類の色（app.js の SPOT_KINDS から渡している）。 */
+.sp{display:flex;flex-direction:column;max-height:min(62vh,440px);overflow-y:auto;
+  padding:12px 13px 13px;font-size:12.5px;line-height:1.6}
+/* 見出し。左に印、右に名前と札。**上に種類の色の帯**を敷いて、どの印の吹き出しか一目で分かる */
+.sp-head{display:flex;gap:9px;align-items:flex-start;padding:0 22px 9px 0;margin-bottom:9px;
+  border-bottom:2px solid var(--tint)}
+.sp-icon{flex:none;line-height:0;margin-top:1px}
+.sp h3{margin:0;font-size:14.5px;line-height:1.4}
+.sp-meta{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:4px 0 0}
+.sp-meta .tag{background:color-mix(in srgb,var(--tint) 12%,transparent);color:var(--tint);
+  font-size:11px;padding:1px 9px;font-weight:700}
+.sp-dist{color:var(--muted);font-size:11.5px;font-variant-numeric:tabular-nums}
+.sp-also{color:var(--muted);font-size:11px}
+.sp .summary{margin:0 0 9px;line-height:1.65}
+/* 事実の表。**見出しの列をそろえ、行ごとに細い区切り**を入れて読む順を作る */
+.sp dl{margin:2px 0 0;display:grid;grid-template-columns:5.5em 1fr;gap:0 10px;font-size:12px}
+.sp dt{color:var(--muted);padding:4px 0;border-top:1px solid var(--line)}
+.sp dd{margin:0;padding:4px 0;border-top:1px solid var(--line);
+  font-variant-numeric:tabular-nums}
+.sp dt:first-of-type,.sp dd:nth-of-type(1){border-top:none}
+/* 表に入りきらない補足（時間の但し書き・電話番号）。**注意ではないので色は付けない** */
+.sp-note{margin:9px 0 0;padding:7px 9px;border-radius:7px;background:var(--bg);
+  color:var(--muted);font-size:11.5px;line-height:1.55}
+/* 出どころ。**必ずいちばん下にまとめる**（開発者ガイドラインの表示義務ぶんもここ） */
+.sp-src{margin-top:10px;padding-top:8px;border-top:1px solid var(--line);
+  font-size:11px;color:var(--muted)}
+.sp-src p{margin:0 0 2px}
+.sp-src a{color:var(--muted)}
+.sp .note,.sp .warn{margin:0 0 8px}
+.pick .summary{margin-top:3px;line-height:1.45;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+/* 閉じるボタンまで巻き込まないよう、目的地ボタンだけを対象にする */
+.maplibregl-popup-content button:not(.maplibregl-popup-close-button){
+  margin-top:11px;width:100%;padding:8px;border:none;border-radius:7px;
+  background:var(--accent);color:var(--accent-ink);font-weight:700;font-size:12.5px;
+  cursor:pointer}
+.maplibregl-popup-content button:not(.maplibregl-popup-close-button):hover{filter:brightness(1.08)}
+.maplibregl-popup-close-button{width:28px;height:28px;background:transparent;border:none;
+  color:var(--muted);font-size:18px;line-height:1;cursor:pointer}
+.maplibregl-popup-close-button:hover{background:transparent;color:var(--ink)}
+
+.maplibregl-popup-tip{border-top-color:var(--panel)!important;border-bottom-color:var(--panel)!important}
+.about{padding:24px;max-width:860px;margin:0 auto;overflow-y:auto;height:calc(100vh - 49px)}
+.about h2{font-size:16px;margin-top:22px}
+.about table{border-collapse:collapse;width:100%;font-size:13px;margin-top:8px}
+.about th,.about td{border:1px solid var(--line);padding:6px 8px;text-align:left}
+@media (max-width:1200px){
+  /* 4 列は入らない。ペインを細くし、**経路を出しているあいだは右端を畳む**
+     （4 列だと地図が 300px を切って、行き先も経路も見えなくなる） */
+  .app{grid-template-columns:320px 1fr 252px}
+  .app.has-route{grid-template-columns:320px 320px 1fr}
+  .app.has-route .pane-data{display:none}
+}
+@media (max-width:900px){
+  /* ここまで狭いと右端は置けない（同じ内容は「このサービスについて」で見られる）。
+     経路は**地図の上に重ねて**出す（列にすると地図が 250px を切ってしまう） */
+  .app,.app.has-route{grid-template-columns:320px 1fr;position:relative}
+  .pane-data{display:none}
+  .app.has-route .pane-route{position:absolute;left:320px;top:0;bottom:0;width:320px;
+    z-index:4;box-shadow:var(--shadow)}
+}
+/* ---------- スマホ（iPhone を想定）----------
+   **主な使いどころは PC** なので、作りも操作も変えない。狭いときの並べ方だけ変える。
+
+   いちばん効いたのは**地図を先頭に出す**こと。縦に積むと、操作のカードを 4 つ
+   スクロールしないと地図に着かず、「何のサービスか分からない画面」から始まっていた。
+   スマホでは**開いた瞬間に地図が見えて、操作はその下**にする（`order` で入れ替える。
+   HTML の並びは PC の読み上げ順のままにしておきたいので、CSS 側でやる）。 */
+@media (max-width:760px){
+  /* 縦に積む。**行数を決め打ちしない**（経路ペインは出たり消えたりするので、
+     行の数を固定すると地図が別の行に入って潰れる） */
+  .app,.app.has-route{grid-template-columns:1fr;grid-template-rows:none;height:auto}
+  /* **ページ全体で 1 つのスクロール**にする。ペインの中にもスクロールがあると、
+     指を置く場所で動くものが変わって迷う */
+  .pane{border-right:none;border-top:1px solid var(--line);max-height:none;
+    overflow-y:visible;padding:12px}
+  /* 並びは 地図 → 経路の結果 → 操作。**`.pane-route` は `.pane` でもある**ので、
+     `.pane{order:3}` より**後ろに書く**（同じ強さなので、先に書くと負ける） */
+  .map-wrap{order:1}
+  .pane{order:3}
+  .pane-route{order:2}
+  /* dvh があればそちらを使う（iOS は URL バーの出入りで vh がずれる） */
+  .map-wrap{height:58vh;height:58dvh;min-height:320px;border-bottom:1px solid var(--line)}
+  /* 経路の結果は地図のすぐ下。重ねると地図が隠れてしまう */
+  .app.has-route .pane-route{position:static;width:auto;box-shadow:none;
+    border-bottom:1px solid var(--line)}
+  /* ヘッダは 2 段。1 段目にサービス名と「このサービスについて」、2 段目に舞台の切り替え */
+  .head{flex-wrap:wrap;gap:6px 10px;padding:8px 12px}
+  .head h1{font-size:15px}
+  .stage-switch{order:3;flex:1 1 100%;gap:6px}
+  .stage-switch button{padding:4px 12px;font-size:12.5px}
+  /* 地図が小さいぶん、凡例も小さく畳む。**出典の帯が 2 行に折り返す**ので、
+     その上に逃がす（重なると凡例も出典も読めなくなる） */
+  .legend{left:8px;bottom:42px;right:8px;padding:6px 8px;font-size:10px}
+  .maplibregl-ctrl-attrib{font-size:9.5px;line-height:1.4}
+  .lg-spots{grid-template-columns:1fr 1fr}
+  .legend-route{top:8px;bottom:auto;right:8px}
+  /* 地図が 58vh しかないので、吹き出しは低めにする。
+     はみ出したぶんは `fitPopup()` が地図を動かして収める */
+  .sp{max-height:min(40vh,320px)}
+  .maplibregl-popup-content{max-width:min(290px,calc(100vw - 40px))}
+}

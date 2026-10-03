@@ -1,0 +1,23 @@
+# **いまは選べない舞台。** 画面にはボタンだけ出して、押せないようにしてある。
+#
+# 新宿区は「駅の中（GTFS-Pathways）」と「ほこナビの屋外歩行空間」がそろう唯一の舞台
+# として作ってあったが、2026-09-25 にデータごと取り下げた。
+# いまここに残っているのは**画面のボタンの見出しだけ**で、区域・時刻表・スポットは
+# 1 件も持っていない（data/boundary・data/spots・data/*.sqlite から消してある）。
+#
+# 戻すときの手順:
+#   1. enabled を true にして、pref_code / code / center / homes / pbf / transit /
+#      walk_layers / indoor / spots / web_pages を書き戻す（git の履歴に残っている）
+#   2. scripts/build_boundary.py → fetch_data.py → build_db.py → build_walk.py →
+#      build_transfers.py → build_spots.py の順に流してデータを作り直す
+#   3. 区の CSV の読み方（tokyo_childcare / tokyo_babystation / tokyo_park /
+#      hokonavi_toilet）はコードから消してあるので、scripts/build_spots.py の
+#      LOADERS に足し直す
+#
+# `enabled: false` の舞台は backend/stages.py の load_all() が既定で返さないので、
+# データ整備のスクリプトは触らない。画面の舞台一覧だけが拾って、押せないボタンにする。
+id: shinjuku
+name: 新宿区
+pref: 東京都
+enabled: false
+note: いまは流山市だけで動かしています
